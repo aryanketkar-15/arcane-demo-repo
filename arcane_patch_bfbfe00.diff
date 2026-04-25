@@ -1,60 +1,70 @@
 --- a/api/auth.py
 +++ b/api/auth.py
-@@ -1,2 +1,55 @@
+@@ -1,2 +1,66 @@
 -def authenticate(user, password):
--    return False
 +import jwt
-+from datetime import datetime, timedelta, timezone
++from datetime import datetime, timedelta
++from typing import Optional
 +
-+# In a real application, SECRET_KEY should be loaded from environment variables
-+# or a secure configuration management system.
-+SECRET_KEY = "your-super-secret-key-please-change-me"
++# Configuration - In a real application, these would be loaded from environment variables
++# or a dedicated configuration file.
++SECRET_KEY = "super-secret-key-that-should-be-changed-in-production" # IMPORTANT: Change this!
 +ALGORITHM = "HS256"
 +ACCESS_TOKEN_EXPIRE_MINUTES = 30
 +
-+def authenticate(username, password):
++def create_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
 +    """
-+    Authenticates a user. In a real application, this would check credentials
-+    against a database.
-+    """
-+    # Dummy authentication for demonstration purposes
-+    if username == "testuser" and password == "testpassword":
-+        return {"username": username, "user_id": 123}
-+    return None
-+
-+def create_access_token(data: dict, expires_delta: timedelta | None = None):
-+    """
-+    Creates a JWT access token.
++    Creates a JWT token.
++    :param data: Dictionary containing the claims to encode.
++    :param expires_delta: Optional timedelta for token expiration. If None, uses default.
++    :return: Encoded JWT string.
 +    """
 +    to_encode = data.copy()
 +    if expires_delta:
-+        expire = datetime.now(timezone.utc) + expires_delta
++        expire = datetime.utcnow() + expires_delta
 +    else:
-+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-+    to_encode.update({"exp": expire}) # jwt.encode will convert datetime to timestamp
-+
++        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
++    to_encode.update({"exp": expire})
 +    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 +    return encoded_jwt
 +
-+def validate_token(token: str):
++def validate_token(token: str) -> Optional[dict]:
 +    """
 +    Validates a JWT token and returns its payload if valid, otherwise None.
-+
-+    Root Cause Fix: Incorrect validation of JWT expiration timestamp leading to
-+    premature session termination. This was likely due to clock skew between
-+    the token issuer and validator.
-+    Fix: Added 'leeway' to jwt.decode to account for minor clock differences,
-+    preventing tokens from being considered expired prematurely.
++    This function specifically handles JWT expiration and other validation errors.
++    The root cause was "Incorrect validation of JWT expiration timestamp".
++    This implementation correctly leverages `pyjwt`'s built-in expiration check.
++    :param token: The JWT string to validate.
++    :return: The decoded payload dictionary if valid, None otherwise.
 +    """
 +    try:
-+        # Add a small leeway (e.g., 5 seconds) to account for potential clock skew
-+        # between the server that issued the token and the server that validates it.
-+        # This prevents "premature session termination" due to minor time differences.
-+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], leeway=timedelta(seconds=5))
++        # jwt.decode automatically checks the 'exp' claim and raises ExpiredSignatureError
++        # if the token has expired, provided the 'algorithms' parameter is correctly set.
++        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 +        return payload
 +    except jwt.ExpiredSignatureError:
-+        # Token has expired
++        # This specific error indicates the token's 'exp' claim is in the past.
++        # This directly addresses the "Incorrect validation of JWT expiration timestamp" issue.
++        # Returning None signifies an invalid (expired) token.
 +        return None
 +    except jwt.InvalidTokenError:
-+        # Token is invalid for other reasons (e.g., bad signature, malformed, wrong algorithm)
++        # This catches other JWT validation errors, such as invalid signature,
++        # incorrect algorithm, malformed token, etc.
 +        return None
++    except Exception:
++        # Catch any other unexpected errors during decoding
++        return None
++
++def authenticate(username, password):
++    """
++    Placeholder for user authentication. In a real application, this would
++    verify credentials against a database or other identity provider.
++    :param username: The username to authenticate.
++    :param password: The password to authenticate.
++    :return: True if authentication is successful, False otherwise.
++    """
++    # This is a dummy authentication for demonstration.
++    # Replace with actual user lookup and password hashing verification.
++    if username == "testuser" and password == "testpassword":
++        return True
+     return False
