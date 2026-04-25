@@ -1,56 +1,29 @@
 --- a/api/auth.py
 +++ b/api/auth.py
-@@ -1,2 +1,52 @@
+@@ -1,2 +1,24 @@
+-def authenticate(user, password):
+-    return False
 +import jwt
-+import datetime
++from datetime import datetime, timedelta
 +
-+# In a real application, SECRET_KEY should be loaded from environment variables
-+# or a secure configuration management system, not hardcoded.
 +SECRET_KEY = "your-super-secret-key-please-change-me"
 +ALGORITHM = "HS256"
-+EXPIRATION_MINUTES = 30
-+# Leeway in seconds to account for clock skew between servers.
-+# This helps prevent premature token expiration due to minor time differences.
-+LEEWAY_SECONDS = 10
++TOKEN_EXPIRATION_MINUTES = 30
 +
-+def create_access_token(data: dict):
-+    """
-+    Creates a new JWT access token with an expiration time.
-+    """
-+    to_encode = data.copy()
-+    # Set expiration time in UTC for consistency
-+    expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=EXPIRATION_MINUTES)
-+    to_encode.update({"exp": expire})
-+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-+    return encoded_jwt
++def create_token(user_id: str) -> str:
++    expiration = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
++    payload = {
++        "sub": user_id,
++        "exp": expiration.timestamp(),
++        "iat": datetime.utcnow().timestamp(),
++    }
++    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 +
-+def validate_token(token: str):
-+    """
-+    Validates a JWT token, checking its signature and expiration.
-+    Returns the decoded payload if valid, otherwise None.
-+    """
++def validate_token(token: str) -> dict | None:
 +    try:
-+        # jwt.decode automatically verifies the signature and checks the 'exp' claim.
-+        # The 'leeway' parameter allows for a small clock skew.
-+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], leeway=LEEWAY_SECONDS)
++        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
++        if datetime.utcnow().timestamp() > payload.get("exp", 0):
++            return None
 +        return payload
-+    except jwt.ExpiredSignatureError:
-+        # Token has expired, which is a valid reason for it to be invalid.
++    except jwt.PyJWTError:
 +        return None
-+    except jwt.InvalidTokenError:
-+        # Token is invalid (e.g., bad signature, malformed, or other validation errors).
-+        return None
-+
- def authenticate(user, password):
--    return False
-+    """
-+    Authenticates a user and, if successful, returns an access token.
-+    This is a placeholder for actual user authentication (e.g., against a database).
-+    """
-+    # Dummy authentication for demonstration purposes.
-+    # In a real application, you would verify credentials against a user store.
-+    if user == "testuser" and password == "testpassword":
-+        token_data = {"sub": user} # 'sub' (subject) is a common claim for user ID
-+        access_token = create_access_token(token_data)
-+        return access_token
-+    return False # Authentication failed
