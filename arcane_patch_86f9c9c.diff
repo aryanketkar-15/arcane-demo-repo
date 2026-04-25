@@ -1,0 +1,29 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,24 @@
+-def authenticate(user, password):
+-    return False
++import jwt
++from datetime import datetime, timedelta
++
++SECRET_KEY = "your-super-secret-key-please-change-me"
++ALGORITHM = "HS256"
++TOKEN_EXPIRATION_MINUTES = 30
++
++def create_token(user_id: str) -> str:
++    expiration = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
++    payload = {
++        "sub": user_id,
++        "exp": expiration.timestamp(),
++        "iat": datetime.utcnow().timestamp(),
++    }
++    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
++
++def validate_token(token: str) -> dict | None:
++    try:
++        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
++        if datetime.utcnow().timestamp() > payload.get("exp", 0):
++            return None
++        return payload
++    except jwt.PyJWTError:
++        return None
