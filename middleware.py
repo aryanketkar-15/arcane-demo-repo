@@ -1,7 +1,7 @@
 from auth import validate_user
 
 def auth_middleware(request):
-    auth_header = request.get("headers", {}).get("Authorization", ")
+    auth_header = request.get("headers", {}).get("Authorization", "")
     if not auth_header.startswith("Basic "):
         return False
     
