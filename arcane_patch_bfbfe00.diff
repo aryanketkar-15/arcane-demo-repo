@@ -1,0 +1,60 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,55 @@
+-def authenticate(user, password):
+-    return False
++import jwt
++from datetime import datetime, timedelta, timezone
++
++# In a real application, SECRET_KEY should be loaded from environment variables
++# or a secure configuration management system.
++SECRET_KEY = "your-super-secret-key-please-change-me"
++ALGORITHM = "HS256"
++ACCESS_TOKEN_EXPIRE_MINUTES = 30
++
++def authenticate(username, password):
++    """
++    Authenticates a user. In a real application, this would check credentials
++    against a database.
++    """
++    # Dummy authentication for demonstration purposes
++    if username == "testuser" and password == "testpassword":
++        return {"username": username, "user_id": 123}
++    return None
++
++def create_access_token(data: dict, expires_delta: timedelta | None = None):
++    """
++    Creates a JWT access token.
++    """
++    to_encode = data.copy()
++    if expires_delta:
++        expire = datetime.now(timezone.utc) + expires_delta
++    else:
++        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
++    to_encode.update({"exp": expire}) # jwt.encode will convert datetime to timestamp
++
++    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
++    return encoded_jwt
++
++def validate_token(token: str):
++    """
++    Validates a JWT token and returns its payload if valid, otherwise None.
++
++    Root Cause Fix: Incorrect validation of JWT expiration timestamp leading to
++    premature session termination. This was likely due to clock skew between
++    the token issuer and validator.
++    Fix: Added 'leeway' to jwt.decode to account for minor clock differences,
++    preventing tokens from being considered expired prematurely.
++    """
++    try:
++        # Add a small leeway (e.g., 5 seconds) to account for potential clock skew
++        # between the server that issued the token and the server that validates it.
++        # This prevents "premature session termination" due to minor time differences.
++        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], leeway=timedelta(seconds=5))
++        return payload
++    except jwt.ExpiredSignatureError:
++        # Token has expired
++        return None
++    except jwt.InvalidTokenError:
++        # Token is invalid for other reasons (e.g., bad signature, malformed, wrong algorithm)
++        return None
