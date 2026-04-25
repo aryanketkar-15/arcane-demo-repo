@@ -1,0 +1,46 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,43 @@
++import jwt
++from datetime import datetime, timedelta
++
++# In a real application, this should be loaded from environment variables
++# or a secure configuration management system.
++SECRET_KEY = "your-super-secret-key-please-change-me"
++ALGORITHM = "HS256"
++TOKEN_EXPIRATION_MINUTES = 30
++
++def create_token(user_id: str) -> str:
++    """
++    Creates a JWT token for a given user ID.
++    """
++    expiration = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
++    payload = {
++        "sub": user_id,
++        "exp": expiration,
++        "iat": datetime.utcnow(),
++    }
++    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
++    return encoded_jwt
++
++def validate_token(token: str) -> dict | None:
++    """
++    Validates a JWT token and returns its payload if valid, otherwise None.
++    This function correctly handles JWT expiration by leveraging the PyJWT library's
++    built-in expiration validation.
++    """
++    try:
++        # jwt.decode automatically validates the 'exp' claim.
++        # If the token is expired, it raises jwt.ExpiredSignatureError.
++        # If the signature is invalid or token is malformed, it raises jwt.InvalidTokenError.
++        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
++        return payload
++    except jwt.ExpiredSignatureError:
++        # The token has expired.
++        return None
++    except jwt.InvalidTokenError:
++        # Token is invalid for other reasons (e.g., bad signature, malformed).
++        return None
++
+ def authenticate(user, password):
+     return False
