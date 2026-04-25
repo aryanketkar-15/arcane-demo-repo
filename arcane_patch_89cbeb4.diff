@@ -1,0 +1,51 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,48 @@
++import jwt
++import datetime
++
++# In a real application, this would be loaded from environment variables or a configuration file.
++# For this example, we'll define it here.
++SECRET_KEY = "super-secret-key-that-should-be-long-and-random"
++
+ def authenticate(user, password):
++    """
++    Placeholder for user authentication.
++    In a real application, this would verify user credentials against a database.
++    """
++    # This function is not directly related to the JWT validation issue,
++    # but it's part of the original file. Keep it as is.
+     return False
++
++def create_token(user_id):
++    """
++    Creates a JWT token for a given user_id.
++    This function is not explicitly requested for a fix, but useful for context.
++    """
++    payload = {
++        'user_id': user_id,
++        # Token expires in 30 minutes from UTC now
++        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30),
++        'iat': datetime.datetime.utcnow()
++    }
++    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
++
++def validate_token(token):
++    """
++    Validates a JWT token, including its expiration.
++    The fix addresses "Incorrect validation of JWT expiration timestamp leading to premature session termination."
++    This often points to clock skew issues or a missing 'leeway' parameter.
++    """
++    try:
++        # By default, pyjwt's decode verifies 'exp' and raises ExpiredSignatureError.
++        # To prevent premature expiration due to minor clock differences between token issuer and validator,
++        # a 'leeway' (in seconds) can be provided. This allows tokens to be valid for a short period
++        # after their 'exp' time. A common value is 60 seconds.
++        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'], leeway=60)
++        return payload
++    except jwt.ExpiredSignatureError:
++        # Token has genuinely expired (even with leeway applied)
++        return None
++    except jwt.InvalidTokenError:
++        # Token is invalid for other reasons (e.g., bad signature, malformed)
++        return None
