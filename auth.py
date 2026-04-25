@@ -1,6 +1,6 @@
-def validate_user(username, password):
-    if not username or not password:
+def validate_user(user, pwd):
+    if not user or not pwd:
         return False
-    if username == "admin" and password == "secret":
+    if user == "admin" and pwd == "secret":
         return True
     return False
