@@ -1,0 +1,19 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,16 @@
++from flask_jwt_extended import get_jwt_identity, create_access_token
++import datetime as dt
++
+ def authenticate(user, password):
++    if user and password:
++        return {'access_token': create_access_token(identity={'user': user})}
++
++def validate_token(token):
++    try:
++        identity = get_jwt_identity(token)
++        expires_at = dt.datetime.fromtimestamp(identity['exp'])
++        if expires_at > dt.datetime.now():
++            return True
++    except Exception as e:
++        print(f"Error validating token: {str(e)}")
+     return False
