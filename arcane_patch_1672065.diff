@@ -1,0 +1,18 @@
+--- a/unknown
++++ b/unknown
+@@ -1,2 +1,13 @@
+-def authenticate(user, password):
+-    return False
++from flask import Flask, request, jsonify
++app = Flask(__name__)
++
++@app.before_request
++def add_cors_headers():
++    response.headers['Access-Control-Allow-Origin'] = '*'
++    response.headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS'
++    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
++
++from your_app import app
++
++if __name__ == '__main__':
++    app.run(debug=True)
