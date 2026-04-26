@@ -1,0 +1,9 @@
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -1,2 +1,5 @@
+ def authenticate(user, password):
+-    return False
++    if user == "testuser" and password == "testpassword":
++        return True
++    else:
++        return False
