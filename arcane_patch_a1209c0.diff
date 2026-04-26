@@ -1,0 +1,50 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,47 @@
++import jwt
++from datetime import datetime, timedelta
++
++# In a real application, this secret should be loaded from environment variables
++# or a secure configuration management system. It must be kept confidential.
++SECRET_KEY = "your-super-secret-key-for-jwt-validation" # Replace with a strong, unique key
++
++def create_token(user_id: str) -> str:
++    """
++    Creates a JWT token for a given user ID with an expiration time.
++    """
++    payload = {
++        "user_id": user_id,
++        "exp": datetime.utcnow() + timedelta(minutes=30),  # Token expires in 30 minutes
++        "iat": datetime.utcnow(),
++    }
++    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
++
++def validate_token(token: str) -> dict | None:
++    """
++    Validates a JWT token.
++    It automatically checks for expiration and signature validity.
++    Returns the token's payload if valid, otherwise None.
++    """
++    try:
++        # The jwt.decode function automatically checks the 'exp' (expiration) claim
++        # and raises jwt.ExpiredSignatureError if the token is past its expiration time.
++        # It also validates the token's signature using the provided SECRET_KEY.
++        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
++        return payload
++    except jwt.ExpiredSignatureError:
++        # This specific error indicates the token has expired, addressing the root cause.
++        return None
++    except jwt.InvalidTokenError:
++        # Catches other JWT validation errors (e.g., invalid signature, malformed token).
++        return None
++
+ def authenticate(user, password):
++    """
++    Authenticates a user. If successful, it returns a JWT token.
++    Otherwise, it returns False.
++    This is a placeholder for actual user authentication logic (e.g., checking a database).
++    """
++    # Simulate successful authentication for a specific user
++    if user == "admin" and password == "password123":
++        return create_token(user_id=user)
+     return False
