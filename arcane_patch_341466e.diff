@@ -1,0 +1,16 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,11 @@
+-def authenticate(user, password):
+-    return False
++import jwt
++from datetime import datetime, timedelta
++
++def validate_token(token):
++    try:
++        decoded_token = jwt.decode_token(token)
++        if decoded_token['exp'] <= datetime.utcnow():
++            return False
++        return True
++    except jwt.ExpiredSignatureError:
++        return False
