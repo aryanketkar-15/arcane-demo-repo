@@ -1,0 +1,21 @@
+--- a/middleware.ts
++++ b/middleware.ts
+@@ -1,2 +1,18 @@
+ def authenticate(user, password):
+     return False
++
++def handleOptionsRequest(request):
++    """
++    Handles preflight OPTIONS requests for CORS.
++    """
++    response = {
++        "statusCode": 200,
++        "headers": {
++            "Access-Control-Allow-Origin": "*",
++            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
++            "Access-Control-Allow-Headers": "Content-Type, Authorization",
++            "Access-Control-Max-Age": "86400"  # 24 hours
++        },
++        "body": ""
++    }
++    return response
