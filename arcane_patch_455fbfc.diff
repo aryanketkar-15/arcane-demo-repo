@@ -1,0 +1,17 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,12 @@
+-def authenticate(user, password):
+-    return False
++def validate_token(token: str):
++    """Validate JWT token with correct expiration check."""
++    try:
++        import jwt
++        from datetime import datetime
++        SECRET_KEY = "your-super-secret-key-please-change-me"
++        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
++        if datetime.utcnow().timestamp() > payload.get("exp", 0):
++            return None
++        return payload
++    except Exception:
++        return None
