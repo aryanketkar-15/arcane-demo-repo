@@ -1,0 +1,6 @@
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -1,2 +1,2 @@
+-def authenticate(user, password):
++def validate_user(username, password):
+     return False
