@@ -1,0 +1,26 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,23 @@
++import jwt
++import datetime
++from werkzeug.exceptions import BadRequest, Unauthorized
++
+ def authenticate(user, password):
+     return False
++
++def generate_token(user_id, secret, expiry=30):
++    payload = {
++        'user_id': user_id,
++        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=expiry)
++    }
++    token = jwt.encode(payload, secret, algorithm='HS256')
++    return token
++
++def validate_token(token, secret):
++    try:
++        payload = jwt.decode(token, secret, algorithms=['HS256'])
++        return payload['user_id']
++    except jwt.ExpiredSignatureError:
++        raise Unauthorized('Token has expired')
++    except jwt.InvalidTokenError:
++        raise BadRequest('Invalid token')
