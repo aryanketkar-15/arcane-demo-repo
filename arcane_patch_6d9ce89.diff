@@ -1,0 +1,62 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,59 @@
++import jwt
++from datetime import datetime, timedelta
++
++# IMPORTANT: In a real application, SECRET_KEY should be loaded from
++# environment variables or a secure configuration management system,
++# and should be a strong, unique, and truly secret key.
++SECRET_KEY = "your-super-secret-key-that-no-one-knows"
++ALGORITHM = "HS256"
++
++# Leeway for clock skew, e.g., 5 seconds.
++# This allows tokens to be valid for a short period after their 'exp' time
++# to account for minor clock differences between the token issuer and validator.
++# This is crucial for preventing "premature session termination" due to slight
++# clock discrepancies between the server issuing the token and the server validating it.
++JWT_LEEWAY_SECONDS = 5
++
++def create_token(user_id: int, expires_delta: timedelta = None) -> str:
++    """
++    Creates a JWT token for a given user ID.
++    """
++    if expires_delta is None:
++        expires_delta = timedelta(minutes=30) # Default expiration
++
++    expire = datetime.utcnow() + expires_delta
++    to_encode = {"exp": expire, "sub": str(user_id)}
++    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
++    return encoded_jwt
++
++def validate_token(token: str) -> dict | None:
++    """
++    Validates a JWT token and returns its payload if valid, otherwise None.
++    This function addresses the issue of "Incorrect validation of JWT expiration timestamp"
++    by correctly using the 'leeway' parameter to account for clock skew, preventing
++    premature session termination.
++    """
++    try:
++        # jwt.decode automatically checks the 'exp' claim if present and raises ExpiredSignatureError.
++        # The 'leeway' parameter adds a buffer to the expiration time, allowing tokens
++        # to be considered valid for a few seconds past their 'exp' time to accommodate
++        # minor clock differences between systems.
++        payload = jwt.decode(
++            token,
++            SECRET_KEY,
++            algorithms=[ALGORITHM],
++            leeway=JWT_LEEWAY_SECONDS # This is the key fix for premature expiration
++        )
++        return payload
++    except jwt.ExpiredSignatureError:
++        # Token has expired
++        return None
++    except jwt.InvalidTokenError:
++        # Token is invalid (e.g., bad signature, malformed, other validation errors)
++        return None
++
+ def authenticate(user, password):
++    # This function's implementation remains unchanged from the original,
++    # as the root cause is specifically related to JWT token validation,
++    # not the initial user/password authentication process.
+     return False
