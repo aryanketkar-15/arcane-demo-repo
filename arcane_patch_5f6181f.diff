@@ -1,0 +1,19 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,14 @@
+-def authenticate(user, password):
+-    return False
++from jwt import PyJWK, PyJWS
++import datetime
++
++def validate_token(token, user_id):
++    try:
++        jws = PyJWS().decode(token, options={"algorithms": ["HS256"]})
++        if not jws or 'exp' not in jws.payload():
++            return False
++        expires_at = datetime.datetime.utcfromtimestamp(jws.payload()['exp'])
++        if expires_at < datetime.datetime.utcnow():
++            return False
++    except Exception:
++        return False
++    return True
