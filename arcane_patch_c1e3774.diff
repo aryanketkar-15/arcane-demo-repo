@@ -1,0 +1,12 @@
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -1,2 +1,8 @@
++from flask_jwt_extended import get_jwt_identity
++import datetime as dt
++
+ def authenticate(user, password):
+-    return False
++    token = get_jwt_identity()
++    if not token or token['exp'] < int(dt.datetime.now().strftime('%s')):
++        return False
++    return True
